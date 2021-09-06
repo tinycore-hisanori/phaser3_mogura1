@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+  </head>
+  <body>
+    <script>
+      class moguraEnemy extends Phaser.GameObjects.Sprite {
+        constructor(scene, x, y) {
+          super(scene, x, y);
+          this.setTexture("mogura");
+          this.setPosition(x, y);
+          scene.add.existing(this);
+          this.status = 0;
+          this.secCnt = 0;
+          this.setFrame(0);
+          this.setInteractive();
+          this.on("pointerdown", function (pointer) {
+            if (this.status == 1 && cntRemain > 0) {
+              this.status = 2;
+              this.setFrame(2);
+              score = score + 1;
+              sePico.play();
+              txtScore.text = "Score:" + score;
+            }
+          });
+        }
+        preUpdate(time, delta) {
+          super.preUpdate(time, delta);
+          if (cntRemain > 0) {
+            if (this.status == 0) {
+              this.secCnt = (this.secCnt + 1) % 60;
+              if (this.secCnt == 0) {
+                var random = Math.round(Math.random() * 100);
+                if (random > 50) {
+                  this.status = 1;
+                  this.setFrame(1);
+                }
+              }
+            } else if (this.status == 1) {
+              this.secCnt = (this.secCnt + 1) % 100;
+              if (this.secCnt == 0) {
+                this.status = 0;
+                this.setFrame(0);
+              }
+            } else {
+              this.secCnt = (this.secCnt + 1) % 200;
+              if (this.secCnt == 0) {
+                this.status = 0;
+                this.setFrame(0);
+              }
+            }
+          } else {
+            this.setFrame(0);
+          }
+        }
+      }
+
+      class titleScene extends Phaser.Scene {
+        constructor() {
+          super({ key: "titleScene", active: true });
+        }
+        create() {
+          let text = this.add
+            .text(100, 100, " Mogura Game")
+            .setFontSize(64)
+            .setColor("#ff0");
+          let clickButton = this.add.text(200, 300, "START TO CLICK", {
+            fill: "#0f0"
+          });
+          clickButton
+            .setStroke("#0000ff", 4)
+            .setFontSize("40px")
+            .setInteractive();
+          clickButton.on(
+            "pointerdown",
+            () => {
+              this.scene.start("MyScene1");
+            },
+            this
+          );
+        }
+      }
+      class MyScene1 extends Phaser.Scene {
+        constructor() {
+          super({ key: "MyScene1", active: false });
+        }
+        preload() {
+          this.load.image("bg001", "./bg.jpg");
+          this.load.spritesheet("mogura", "./mogura.png", {
+            frameWidth: 50,
+            frameHeight: 50
+          });
+          this.load.audio("sePico", "pico.mp3");
+          this.load.audio("seEnd", "gong.mp3");
+        }
+        create() {
+          sePico = this.sound.add("sePico");
+          seEnd = this.sound.add("seEnd");
+          let bg001 = this.add.tileSprite(400, 300, 800, 600, "bg001");
+          moguras = this.add.group();
+          for (var i = 0; i < 3; i++) {
+            for (var j = 0; j < 5; j++) {
+              let obj = new moguraEnemy(this, 200 + j * 100, 300 + i * 100);
+              moguras.add(obj);
+            }
+          }
+
+          txtTime = this.add
+            .text(300, 20, "time:" + cntRemain)
+            .setFontSize(30)
+            .setStroke("#ffffff", 2)
+            .setColor("#ffffff");
+
+          txtScore = this.add
+            .text(600, 20, "Score:0")
+            .setFontSize(30)
+            .setStroke("#ffffff", 2)
+            .setColor("#ffffff");
+        }
+        update() {
+          if (cntRemain > 0) {
+            cntSecond = (cntSecond + 1) % 60;
+            if (cntSecond == 0) {
+              txtTime.text = "time:" + cntRemain;
+              cntRemain = cntRemain - 1;
+              if (cntRemain <= 0) {
+                txtTime.text = "time:END";
+                seEnd.play();
+              }
+            }
+          }
+        }
+      }
+      var bGaming = false;
+      var cntSecond = 0,
+        cntRemain = 15;
+      var moguras, txtTime, txtScore, txtName;
+      var score = 0,
+        yourName = "Taro";
+      var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: "#4488aa",
+        audio: { disableWebAudio: true },
+        scene: [titleScene, MyScene1]
+      };
+      var game = new Phaser.Game(config);
+      var sePico, seEnd, bgm;
+    </script>
+  </body>
+</html>
